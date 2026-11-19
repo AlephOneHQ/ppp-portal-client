@@ -58,7 +58,7 @@ export default function Page() {
     { value: "draft", label: "Draft" },
     { value: "submitted", label: "Submitted" },
     { value: "under_review", label: "Under Review" },
-    { value: "approved", label: "Approved" },
+    { value: "approved", label: "Accepted" },
     { value: "rejected", label: "Rejected" }
   ]
 
@@ -234,6 +234,8 @@ export default function Page() {
   }
 
   const formatStatus = (status: string): string => {
+    // Proposal acceptance is displayed as "Accepted" (underlying value remains "approved")
+    if (status === "approved") return "Accepted"
     return status
       .split("_")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -459,8 +461,8 @@ export default function Page() {
             <div className="text-center py-12 text-muted-foreground">
               <EmptyState
                 title={userRole === "admin" ? "No proposals received" : "No proposals submitted"}
-                description={userRole === "admin" ? `Proposals from approved EOIs 
-will appear here for evaluation.` : `Once you submit a proposal for an approved EOI,
+                description={userRole === "admin" ? `Proposals from accepted EOIs 
+will appear here for evaluation.` : `Once you submit a proposal for an accepted EOI,
 you'll be able to manage your proposals here.` }
                 iconSrc="/icons/empty-proposal.svg"
               />

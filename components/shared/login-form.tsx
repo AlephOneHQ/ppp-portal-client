@@ -57,12 +57,26 @@ export function LoginForm({
       }
 
       if (result.success) {
-        // Store user ID in session storage for OTP verification
+        // Store user ID in session storage for authenticator-code verification
         sessionStorage.setItem("otp_user_id", result.user_id ?? "");
         sessionStorage.setItem("login_email", email);
+        // A fresh login is never the new-partner (email verification) flow
+        sessionStorage.removeItem("is_new_partner");
 
-        // Success notification using Sonner
-        toast.success("Login successful! Redirecting...");
+        // First login: carry the QR-code data to the verification screen
+        if (result.mfa_setup_required && result.otpauth_uri) {
+          sessionStorage.setItem("mfa_otpauth_uri", result.otpauth_uri);
+          sessionStorage.setItem("mfa_secret", result.totp_secret ?? "");
+        } else {
+          sessionStorage.removeItem("mfa_otpauth_uri");
+          sessionStorage.removeItem("mfa_secret");
+        }
+
+        toast.success(
+          result.mfa_setup_required
+            ? "Password accepted. Set up your authenticator app."
+            : "Password accepted. Enter your authenticator code."
+        );
 
         if (isPartner) {
           router.push("/partner/otp-verification");
@@ -161,7 +175,7 @@ export function LoginForm({
                   {isLoading ? (
                     <>
                       <Spinner />
-                      Sending OTP...
+                      Signing in...
                     </>
                   ) : (
                     "Login"

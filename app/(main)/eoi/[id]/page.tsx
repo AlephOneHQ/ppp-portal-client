@@ -147,11 +147,11 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
     try {
       const result = await eoiAPI.updateStatus(id, "approved")
       if (result.success) {
-        toast.success("EOI approved successfully")
+        toast.success("EOI accepted successfully")
         setEoi(result.data || null)
         setShowApproveDialog(false)
       } else {
-        toast.error("Failed to approve EOI")
+        toast.error("Failed to accept EOI")
       }
     } catch {
       toast.error("Error approving EOI")
@@ -261,6 +261,8 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
 
   const formatStatus = (status: string | undefined) => {
     if (!status) return "Unknown"
+    // EOI acceptance is displayed as "Accepted" (underlying value remains "approved")
+    if (status === "approved") return "Accepted"
     return status.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())
   }
 
@@ -303,9 +305,9 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
       <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Approve EOI</AlertDialogTitle>
+            <AlertDialogTitle>Accept EOI</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to approve this Expression of Interest? This action will allow the partner to
+              Are you sure you want to accept this Expression of Interest? This action will allow the partner to
               proceed with submitting their proposal.
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -319,10 +321,10 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
               {isProcessingAction ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Approving...
+                  Accepting...
                 </>
               ) : (
-                "Yes, Approve EOI"
+                "Yes, Accept EOI"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -512,10 +514,10 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
           )}
         </div>
 
-        {/* Bio */}
+        {/* Company Profile */}
         {eoi.company_bio && (
           <section>
-            <h2 className="text-lg font-semibold mb-4">Bio</h2>
+            <h2 className="text-lg font-semibold mb-4">Company profile</h2>
             <div className="space-y-4 text-sm text-muted-foreground leading-relaxed">
               <p>{eoi.company_bio}</p>
             </div>
@@ -825,7 +827,7 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
                     className="bg-[#C13C3D] hover:bg--[#C13C3D]/70 text-white"
                     onClick={() => setShowApproveDialog(true)}
                   >
-                    Approve Submission
+                    Accept Submission
                   </Button>
                 </div>
               )}

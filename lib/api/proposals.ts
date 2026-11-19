@@ -224,7 +224,7 @@ export const proposalAPI = {
       const response = await api.post(`/projects/admin/proposals/${proposalId}/action/approve/`)
       return {
         success: true,
-        message: response.data.message || "Proposal approved successfully",
+        message: response.data.message || "Proposal accepted successfully",
       }
     } catch (error: unknown) {
       const err = error as { response?: { data?: { message?: string } } }

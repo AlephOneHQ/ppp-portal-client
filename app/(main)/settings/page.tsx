@@ -293,7 +293,7 @@ export default function SettingsPage() {
   const systemNotificationTypes = [
     { type: "ADMIN_INVITED", label: "New user accepted invite" },
     { type: "PROJECT_ARCHIVED", label: "Project Archived" },
-    { type: "PROPOSAL_APPROVED", label: "Proposal Approved" },
+    { type: "PROPOSAL_APPROVED", label: "Proposal Accepted" },
     { type: "PROPOSAL_REJECTED", label: "Proposal Rejected" },
   ]
 

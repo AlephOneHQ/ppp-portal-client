@@ -1004,7 +1004,7 @@ export default function Page({ params }: { params: Promise<{ id: string }> }) {
                   </div>
                   <Textarea
                     id="partner"
-                    placeholder="e.g. Execute project in accordance with approved proposal, submit agreed milestones, and maintain transparent reporting"
+                    placeholder="e.g. Execute project in accordance with accepted proposal, submit agreed milestones, and maintain transparent reporting"
                     value={contractData.partnerRole}
                     onChange={(e) => updateField("partnerRole", e.target.value)}
                     className={cn(

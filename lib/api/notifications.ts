@@ -49,7 +49,8 @@ export interface NotificationFilters {
 export const notificationAPI = {
   list: async (filters: NotificationFilters = {}): Promise<ApiResponse<NotificationListResponse>> => {
     try {
-      const response = await api.get("/notifications/", { params: filters })
+      // Background fetch: notification polling must not reset the inactivity timer.
+      const response = await api.get("/notifications/", { params: filters, backgroundRequest: true } as never)
       return {
         success: true,
         data: response.data,

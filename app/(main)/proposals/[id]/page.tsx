@@ -192,7 +192,7 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
     try {
       const response = await proposalAPI.approve(id)
       if (response.success) {
-        toast.success("Proposal approved successfully")
+        toast.success("Proposal accepted successfully")
 
         setShowApproveDialog(false)
 
@@ -284,7 +284,9 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
                 variant="outline"
                 className={`text-xs whitespace-nowrap px-3 py-2 rounded-md ${getStatusColor(proposal.status)}`}
               >
-                {proposal.status.replace("_", " ").toUpperCase()}
+                {proposal.status === "approved"
+                  ? "ACCEPTED"
+                  : proposal.status.replace("_", " ").toUpperCase()}
               </Badge>
             </div>
           </div>
@@ -332,14 +334,14 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
                       <>
                         <p className="text-sm text-yellow-800 font-medium">Your proposal is being reviewed</p>
                         <p className="text-xs text-yellow-600 mt-1">
-                          If approved, a contract will be generated, and you will receive a notification to review and sign it.
+                          If accepted, a contract will be generated, and you will receive a notification to review and sign it.
                         </p>
                       </>
                     ) : proposal.status === "approved" ? (
                       <>
-                        <p className="text-sm text-yellow-800 font-medium">Proposal Approved — Contract Pending</p>
+                        <p className="text-sm text-yellow-800 font-medium">Proposal Accepted — Contract Pending</p>
                         <p className="text-xs text-yellow-600 mt-1">
-                          This proposal has been approved. Generate a contract to proceed with the partner.
+                          This proposal has been accepted. Generate a contract to proceed with the partner.
                         </p>
                       </>
                     ) : (
@@ -500,7 +502,7 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
                     Processing...
                   </>
                 ) : (
-                  "Approve Proposal"
+                  "Accept Proposal"
                 )}
               </Button>
             </div>
@@ -564,9 +566,9 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
       <AlertDialog open={showApproveDialog} onOpenChange={setShowApproveDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Approve Proposal</AlertDialogTitle>
+            <AlertDialogTitle>Accept Proposal</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to approve this proposal? This will allow you to generate a contract for the partner.
+              Are you sure you want to accept this proposal? This will allow you to generate a contract for the partner.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -579,10 +581,10 @@ export default function EOIDetailPage({ params }: { params: Promise<{ id: string
               {isActioning ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Approving...
+                  Accepting...
                 </>
               ) : (
-                "Yes, Approve Proposal"
+                "Yes, Accept Proposal"
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

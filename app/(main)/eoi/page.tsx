@@ -99,7 +99,7 @@ export default function Page() {
     { value: "all", label: "All" },
     { value: "draft", label: "Draft" },
     { value: "submitted", label: "Submitted" },
-    { value: "approved", label: "Approved" },
+    { value: "approved", label: "Accepted" },
     { value: "rejected", label: "Rejected" },
     { value: "withdrawn", label: "Withdrawn" },
     { value: "archived", label: "Archived" }
@@ -195,9 +195,9 @@ export default function Page() {
         case "approve":
           result = await eoiAPI.updateStatus(eoiId, "approved")
           if (result.success) {
-            toast.success("EOI approved successfully")
+            toast.success("EOI accepted successfully")
           } else {
-            toast.error("Failed to approve EOI")
+            toast.error("Failed to accept EOI")
           }
           break
         
@@ -265,9 +265,9 @@ export default function Page() {
 
     switch (action) {
       case "approve":
-        content.title = "Approve EOI"
-        content.description = `Are you sure you want to approve EOI ${eoiReferenceId} for project "${projectTitle}"? This action cannot be undone.`
-        content.confirmText = "Yes, Approve"
+        content.title = "Accept EOI"
+        content.description = `Are you sure you want to accept EOI ${eoiReferenceId} for project "${projectTitle}"? This action cannot be undone.`
+        content.confirmText = "Yes, Accept"
         content.confirmVariant = "default"
         break
       
@@ -501,6 +501,8 @@ export default function Page() {
   }
 
   const formatStatus = (status: string): string => {
+    // EOI acceptance is displayed as "Accepted" (underlying value remains "approved")
+    if (status === "approved") return "Accepted"
     return status
       .split("_")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
@@ -843,7 +845,7 @@ for any open project to get started.` }
                                   disabled={eoi.status === "withdrawn" || eoi.status === "approved"}
                                 >
                                   <CheckCircle className="mr-2 h-4 w-4" />
-                                  Approve
+                                  Accept
                                 </DropdownMenuItem>
                                 <DropdownMenuItem
                                   onClick={(e) => {

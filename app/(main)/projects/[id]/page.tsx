@@ -340,7 +340,7 @@ export default function ProjectDetailsPage({
                 {hasSubmittedEOI && (
                   <p className="text-sm text-muted-foreground mt-2">
                     {eoiStatus === "approved"
-                      ? "Your Expression of Interest has been approved."
+                      ? "Your Expression of Interest has been accepted."
                       : "You have already submitted an Expression of Interest for this project."}
                   </p>
                 )}

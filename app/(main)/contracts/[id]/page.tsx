@@ -277,8 +277,8 @@ export default function ViewContractPage() {
           </h2>
           <p className="text-sm text-[#444444] mb-6 leading-relaxed">
             {userRole === "partner"
-              ? "Your proposal is being reviewed. If approved, a contract will be generated, and you will receive a notification to review and sign it."
-              : "No contract has been generated for this proposal yet. Once the proposal is approved, you can generate a contract from the proposal details page."}
+              ? "Your proposal is being reviewed. If accepted, a contract will be generated, and you will receive a notification to review and sign it."
+              : "No contract has been generated for this proposal yet. Once the proposal is accepted, you can generate a contract from the proposal details page."}
           </p>
           <div className="rounded-lg bg-amber-50 border border-amber-200 p-4 text-left mb-6">
             <p className="text-xs font-medium text-amber-800 mb-1">What happens next?</p>
@@ -287,7 +287,7 @@ export default function ViewContractPage() {
                 <>
                   <li>The review team evaluates your proposal</li>
                   <li>You will be notified once a decision is made</li>
-                  <li>If approved, a contract will appear here for signing</li>
+                  <li>If accepted, a contract will appear here for signing</li>
                 </>
               ) : (
                 <>

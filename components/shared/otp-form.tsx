@@ -19,6 +19,8 @@ import { useState, useEffect, useRef } from "react";
 import authAPI from "@/lib/api/auth";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner"
+import { QRCodeSVG } from "qrcode.react";
+import { Copy } from "lucide-react";
 
 interface OTPFormProps extends React.ComponentProps<"div"> {
   isPartner?: boolean;
@@ -57,6 +59,9 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
   const [email, setEmail] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [isNewPartner, setIsNewPartner] = useState(false);
+  // Authenticator-app enrollment data (only on first login)
+  const [otpauthUri, setOtpauthUri] = useState("");
+  const [totpSecret, setTotpSecret] = useState("");
 
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -77,13 +82,37 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
     setUserId(storedUserId);
     setEmail(storedEmail);
     setIsNewPartner(storedIsNewPartner === 'true');
+    setOtpauthUri(sessionStorage.getItem('mfa_otpauth_uri') ?? "");
+    setTotpSecret(sessionStorage.getItem('mfa_secret') ?? "");
   }, [router, isPartner]);
+
+  const clearLoginSession = () => {
+    sessionStorage.removeItem("otp_user_id");
+    sessionStorage.removeItem("login_email");
+    sessionStorage.removeItem("is_new_partner");
+    sessionStorage.removeItem("mfa_otpauth_uri");
+    sessionStorage.removeItem("mfa_secret");
+  };
+
+  const backToLogin = () => {
+    clearLoginSession();
+    router.push(isPartner ? '/partner/login' : '/admin/login');
+  };
+
+  const copySecret = async () => {
+    try {
+      await navigator.clipboard.writeText(totpSecret);
+      toast.success("Setup key copied");
+    } catch {
+      toast.error("Could not copy. Please type the key manually.");
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (otp.length !== 6) {
-      setError("Please enter a complete 6-digit OTP");
+      setError("Please enter the complete 6-digit code");
       return;
     }
 
@@ -111,11 +140,9 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
       console.log("OTP verification result:", result);
 
       if (result.success) {
-        sessionStorage.removeItem("otp_user_id");
-        sessionStorage.removeItem("login_email");
-        sessionStorage.removeItem("is_new_partner");
+        clearLoginSession();
 
-        toast.success("OTP verified successfully!");
+        toast.success(isNewPartner ? "Email verified successfully!" : "Verified successfully!");
 
         if (isPartner) {
           if (isNewPartner) {
@@ -206,9 +233,12 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
   };
 
   useEffect(() => {
-    startCountdown(60);
+    // Resend countdown only applies to the emailed signup code
+    if (isNewPartner) startCountdown(60);
     return () => clearInterval(intervalRef.current!);
-  }, []);
+  }, [isNewPartner]);
+
+  const isSetup = !isNewPartner && !!otpauthUri;
 
   return (
     <Card {...props}>
@@ -217,22 +247,57 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
           Confirm that it&apos;s you
         </CardTitle>
         <CardDescription className="mx-auto text-[#444444] leading-[1.4] w-full max-w-xs">
-          Enter the 6-digit code that was sent to your registered email address.
-          {email && (
-            <div className="mt-2 text-sm font-medium">
-              Sent to: <span className="text-[#C13C3D]">{email}</span>
-              {isPartner && (
-                <div className="text-xs text-gray-500 mt-1">
-                  {isNewPartner ? "New partner account" : "Existing partner account"}
+          {isNewPartner ? (
+            <>
+              Enter the 6-digit code that was sent to your registered email address.
+              {email && (
+                <div className="mt-2 text-sm font-medium">
+                  Sent to: <span className="text-[#C13C3D]">{email}</span>
                 </div>
               )}
-            </div>
+            </>
+          ) : isSetup ? (
+            <>
+              Two-factor authentication is required. Scan this QR code with an authenticator app
+              (Google Authenticator, Microsoft Authenticator, Authy), then enter the 6-digit code it shows.
+            </>
+          ) : (
+            <>
+              Open your authenticator app and enter the 6-digit code for this account.
+              {email && (
+                <div className="mt-2 text-sm font-medium">
+                  Account: <span className="text-[#C13C3D]">{email}</span>
+                </div>
+              )}
+            </>
           )}
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form className="py-4 text-[#444444]" onSubmit={handleSubmit}>
           <FieldGroup>
+            {isSetup && (
+              <div className="flex flex-col items-center gap-3">
+                <div className="rounded-md border bg-white p-3">
+                  <QRCodeSVG value={otpauthUri} size={180} />
+                </div>
+                {totpSecret && (
+                  <div className="text-center text-xs text-gray-600">
+                    Can&apos;t scan? Enter this key in your app:
+                    <button
+                      type="button"
+                      onClick={copySecret}
+                      className="mt-1 flex items-center gap-1 mx-auto font-mono text-sm text-[#444444] break-all"
+                      title="Copy setup key"
+                    >
+                      {totpSecret.match(/.{1,4}/g)?.join(" ")}
+                      <Copy className="h-3.5 w-3.5 shrink-0" />
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm mb-4">
                 {error}
@@ -273,21 +338,35 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
                     Verifying...
                   </>
                 ) : (
-                  "Verify Email & Login"
+                  isNewPartner ? "Verify Email" : "Verify & Login"
                 )}
               </Button>
 
-              <FieldDescription className="text-center">
-                Didn&apos;t receive a code?{" "}
-                <button
-                  type="button"
-                  onClick={handleResendOTP}
-                  disabled={countdown > 0 || isLoading}
-                  className="text-[#C13C3D] no-underline hover:text-[#a03030] hover:no-underline disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
-                >
-                  {countdown > 0 ? `Request another in ${countdown}s` : "Request another"}
-                </button>
-              </FieldDescription>
+              {isNewPartner ? (
+                <FieldDescription className="text-center">
+                  Didn&apos;t receive a code?{" "}
+                  <button
+                    type="button"
+                    onClick={handleResendOTP}
+                    disabled={countdown > 0 || isLoading}
+                    className="text-[#C13C3D] no-underline hover:text-[#a03030] hover:no-underline disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {countdown > 0 ? `Request another in ${countdown}s` : "Request another"}
+                  </button>
+                </FieldDescription>
+              ) : (
+                <FieldDescription className="text-center">
+                  Lost access to your authenticator app? Contact an administrator to reset it.{" "}
+                  <button
+                    type="button"
+                    onClick={backToLogin}
+                    disabled={isLoading}
+                    className="text-[#C13C3D] no-underline hover:text-[#a03030] hover:no-underline transition-colors"
+                  >
+                    Back to login
+                  </button>
+                </FieldDescription>
+              )}
             </FieldGroup>
           </FieldGroup>
         </form>

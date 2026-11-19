@@ -50,7 +50,7 @@ const handleApiError = (error: unknown): { message: string; errors?: Record<stri
 }
 
 export const authAPI = {
-  // Admin login (request OTP)
+  // Admin login (password step; then authenticator-app code)
   adminLogin: async (email: string, password: string): Promise<LoginResponse> => {
     try {
       const response = await api.post("/auth/login/", {
@@ -62,6 +62,9 @@ export const authAPI = {
         success: true,
         user_id: response.data.user_id,
         message: response.data.message,
+        mfa_setup_required: response.data.mfa_setup_required ?? false,
+        totp_secret: response.data.totp_secret,
+        otpauth_uri: response.data.otpauth_uri,
       }
     } catch (error: unknown) {
       const { message } = handleApiError(error)
@@ -72,7 +75,7 @@ export const authAPI = {
     }
   },
 
-  // Partner login (request OTP)
+  // Partner login (password step; then authenticator-app code)
   partnerLogin: async (email: string, password: string): Promise<LoginResponse> => {
     try {
       const response = await api.post("/auth/partner/login/", {
@@ -84,6 +87,9 @@ export const authAPI = {
         success: true,
         user_id: response.data.user_id,
         message: response.data.message,
+        mfa_setup_required: response.data.mfa_setup_required ?? false,
+        totp_secret: response.data.totp_secret,
+        otpauth_uri: response.data.otpauth_uri,
       }
     } catch (error: unknown) {
       const { message } = handleApiError(error)
@@ -94,7 +100,7 @@ export const authAPI = {
     }
   },
 
-  // Verify OTP
+  // Verify authenticator-app (TOTP) code for login
   verifyOTP: async (user_id: string, code: string, email: string): Promise<VerifyOTPResponse> => {
     try {
       const response = await api.post("/auth/verify-otp/", {
@@ -341,13 +347,11 @@ export const authAPI = {
     }
   },
 
-  // Logout
+  // Logout - invalidates the session immediately server-side, then clears cookies
   logout: async (): Promise<void> => {
     try {
       const refreshToken = Cookies.get("refresh_token")
-      if (refreshToken) {
-        await api.post("/api/logout/", { refresh_token: refreshToken })
-      }
+      await api.post("/auth/logout/", { refresh_token: refreshToken ?? "" })
     } catch (error) {
       console.error("Logout error:", error)
     } finally {

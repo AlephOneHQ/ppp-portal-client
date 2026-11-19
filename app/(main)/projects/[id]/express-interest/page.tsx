@@ -18,6 +18,8 @@ import { toast } from "sonner"
 import { notificationAPI } from "@/lib/api/notifications"
 import { formStorage } from "@/lib/storage/formPersistence"
 import { countries } from "@/lib/utils/countries"
+import { WordCounter } from "@/components/shared/word-counter"
+import { countWords, MAX_WORDS } from "@/lib/utils/wordCount"
 import { AxiosError } from "axios"
 import {
   AlertDialog,
@@ -374,7 +376,7 @@ export default function ExpressInterestPage({
 
     // Required text fields
     if (!formData.companyBio.trim()) {
-      errors.companyBio = "Company bio is required"
+      errors.companyBio = "Company profile is required"
     }
 
     if (!formData.experience.trim()) {
@@ -383,6 +385,11 @@ export default function ExpressInterestPage({
 
     if (!formData.experience.trim()) {
       errors.projectPlan = "Project Plan is required"
+    }
+
+    // Project plan must not exceed the word limit (same rule as the server).
+    if (countWords(formData.projectPlan) > MAX_WORDS) {
+      errors.projectPlan = `Project plan must not exceed ${MAX_WORDS} words.`
     }
 
     // Portfolio is now optional - only validate if provided
@@ -1479,10 +1486,10 @@ export default function ExpressInterestPage({
                 <SavedEOIsLoader projectId={projectId} onEOISelect={loadEOIFromStorage} currentEOIId={currentEOIId} />
               </div>
 
-              {/* Bio - REQUIRED */}
+              {/* Company Profile - REQUIRED */}
               <div className="space-y-2">
                 <Label htmlFor="bio" className="text-base font-semibold">
-                  Bio <span className="text-red-600">*</span>
+                  Company profile <span className="text-red-600">*</span>
                 </Label>
                 <Textarea
                   id="bio"
@@ -1514,11 +1521,14 @@ export default function ExpressInterestPage({
                 <Textarea
                   id="project-plan"
                   placeholder="E.g. Your vision and development approach, proposed phasing plan, operation/management model, community participation strategy, sustainability and ESG integration"
-                  className={`min-h-32 resize-none ${validationErrors.projectPlan ? "border-red-500 focus:border-red-500" : ""
+                  className={`min-h-32 resize-none ${validationErrors.projectPlan || countWords(formData.projectPlan) > MAX_WORDS ? "border-red-500 focus:border-red-500" : ""
                     }`}
                   value={formData.projectPlan}
                   onChange={(e) => handleInputChange("projectPlan", e.target.value)}
+                  aria-describedby="project-plan-word-counter"
+                  aria-invalid={countWords(formData.projectPlan) > MAX_WORDS}
                 />
+                <WordCounter value={formData.projectPlan} fieldId="project-plan" />
                 {validationErrors.projectPlan && <p className="text-sm text-red-600">{validationErrors.projectPlan}</p>}
               </div>
 
