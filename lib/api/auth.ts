@@ -284,19 +284,23 @@ export const authAPI = {
     }
   },
 
-  // Resend OTP for partner login
-  resendPartnerOTP: async (email: string): Promise<ApiResponse> => {
+  // Restart authenticator-app setup for an unfinished partner signup (returns QR data again)
+  resendPartnerOTP: async (email: string): Promise<LoginResponse> => {
     try {
       const response = await api.post("/auth/partner/resend-otp/", { email })
       return {
         success: true,
+        user_id: response.data.user_id,
         message: response.data.message,
+        mfa_setup_required: response.data.mfa_setup_required ?? false,
+        totp_secret: response.data.totp_secret,
+        otpauth_uri: response.data.otpauth_uri,
       }
     } catch (error: unknown) {
       const { message } = handleApiError(error)
       return {
         success: false,
-        message: message || "Failed to resend OTP",
+        message: message || "Failed to restart authenticator setup",
       }
     }
   },
@@ -311,6 +315,9 @@ export const authAPI = {
         success: true,
         user_id: response.data.user_id,
         message: response.data.message,
+        mfa_setup_required: response.data.mfa_setup_required ?? false,
+        totp_secret: response.data.totp_secret,
+        otpauth_uri: response.data.otpauth_uri,
       }
     } catch (error: unknown) {
       const { message } = handleApiError(error)

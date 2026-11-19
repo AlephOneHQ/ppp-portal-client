@@ -15,7 +15,7 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import authAPI from "@/lib/api/auth";
 import { toast } from "sonner";
 import { Spinner } from "@/components/ui/spinner"
@@ -57,13 +57,10 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
   const [error, setError] = useState<string>("");
   const [userId, setUserId] = useState("");
   const [email, setEmail] = useState("");
-  const [countdown, setCountdown] = useState(0);
   const [isNewPartner, setIsNewPartner] = useState(false);
   // Authenticator-app enrollment data (only on first login)
   const [otpauthUri, setOtpauthUri] = useState("");
   const [totpSecret, setTotpSecret] = useState("");
-
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     const storedUserId = sessionStorage.getItem('otp_user_id');
@@ -142,7 +139,7 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
       if (result.success) {
         clearLoginSession();
 
-        toast.success(isNewPartner ? "Email verified successfully!" : "Verified successfully!");
+        toast.success(isNewPartner ? "Authenticator app linked!" : "Verified successfully!");
 
         if (isPartner) {
           if (isNewPartner) {
@@ -181,64 +178,35 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
     }
   };
 
-  const handleResendOTP = async () => {
-    if (countdown > 0) return;
-
+  // New partners who lost the QR code (or got locked out) can restart setup
+  const handleRestartSetup = async () => {
     setIsLoading(true);
     setError("");
 
     try {
-      let result;
+      const result = await authAPI.resendPartnerOTP(email);
 
-      if (isPartner) {
-        result = await authAPI.resendPartnerOTP(email);
+      if (result.success && result.otpauth_uri) {
+        sessionStorage.setItem('mfa_otpauth_uri', result.otpauth_uri);
+        sessionStorage.setItem('mfa_secret', result.totp_secret ?? "");
+        setOtpauthUri(result.otpauth_uri);
+        setTotpSecret(result.totp_secret ?? "");
+        setOtp("");
+        toast.success("Setup restarted. Scan the QR code and enter the new code.");
       } else {
-        // Admin has no dedicated resend endpoint — redirect to login to re-authenticate
-        sessionStorage.removeItem('otp_user_id');
-        sessionStorage.removeItem('login_email');
-        toast.info("Please log in again to receive a new OTP.");
-        router.push('/admin/login');
-        return;
-      }
-
-      if (result.success) {
-        toast.success("OTP resent successfully. Please check your email.");
-        startCountdown(60);
-      } else {
-        setError(result.message || "Failed to resend OTP. Please try again.");
-        toast.error(result.message || "Failed to resend OTP. Please try again.");
+        setError(result.message || "Could not restart setup. Please try again.");
+        toast.error(result.message || "Could not restart setup. Please try again.");
       }
     } catch (error) {
-      console.error("Resend OTP error:", error);
-      setError("Failed to resend OTP. Please try again.");
-      toast.error("Failed to resend OTP. Please try again.");
+      console.error("Restart setup error:", error);
+      setError("Could not restart setup. Please try again.");
+      toast.error("Could not restart setup. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const startCountdown = (seconds: number) => {
-    setCountdown(seconds);
-    if (intervalRef.current) clearInterval(intervalRef.current);
-
-    intervalRef.current = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalRef.current!);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-  };
-
-  useEffect(() => {
-    // Resend countdown only applies to the emailed signup code
-    if (isNewPartner) startCountdown(60);
-    return () => clearInterval(intervalRef.current!);
-  }, [isNewPartner]);
-
-  const isSetup = !isNewPartner && !!otpauthUri;
+  const isSetup = !!otpauthUri;
 
   return (
     <Card {...props}>
@@ -247,12 +215,12 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
           Confirm that it&apos;s you
         </CardTitle>
         <CardDescription className="mx-auto text-[#444444] leading-[1.4] w-full max-w-xs">
-          {isNewPartner ? (
+          {isNewPartner && !isSetup ? (
             <>
-              Enter the 6-digit code that was sent to your registered email address.
+              Open your authenticator app and enter the 6-digit code for this account.
               {email && (
                 <div className="mt-2 text-sm font-medium">
-                  Sent to: <span className="text-[#C13C3D]">{email}</span>
+                  Account: <span className="text-[#C13C3D]">{email}</span>
                 </div>
               )}
             </>
@@ -338,20 +306,20 @@ const OTPForm = ({ isPartner, ...props }: OTPFormProps) => {
                     Verifying...
                   </>
                 ) : (
-                  isNewPartner ? "Verify Email" : "Verify & Login"
+                  isNewPartner ? "Verify & Continue" : "Verify & Login"
                 )}
               </Button>
 
               {isNewPartner ? (
                 <FieldDescription className="text-center">
-                  Didn&apos;t receive a code?{" "}
+                  Lost the QR code or locked out?{" "}
                   <button
                     type="button"
-                    onClick={handleResendOTP}
-                    disabled={countdown > 0 || isLoading}
+                    onClick={handleRestartSetup}
+                    disabled={isLoading}
                     className="text-[#C13C3D] no-underline hover:text-[#a03030] hover:no-underline disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
                   >
-                    {countdown > 0 ? `Request another in ${countdown}s` : "Request another"}
+                    Restart setup
                   </button>
                 </FieldDescription>
               ) : (

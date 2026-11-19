@@ -34,8 +34,8 @@ const ForgotPasswordForm = ({isPartner = false, ...props }: ForgotPasswordFormPr
       const result = await authAPI.passwordResetRequest(email);
       
       if (result.success) {
-        toast.success("Password reset code sent to your email!");
-        setMessage("Password reset code sent to your email!");
+        toast.success("Open your authenticator app to get your code.");
+        setMessage("Continue with the 6-digit code from your authenticator app.");
         // Redirect to reset password page with email
         setTimeout(() => {
           if (isPartner) {
@@ -45,7 +45,7 @@ const ForgotPasswordForm = ({isPartner = false, ...props }: ForgotPasswordFormPr
           }
         }, 2000);
       } else {
-        setMessage(result.message || "Failed to send reset code");
+        setMessage(result.message || "Failed to start password reset");
       }
     } catch (error) {
       setMessage("An error occurred. Please try again.");
@@ -62,7 +62,7 @@ const ForgotPasswordForm = ({isPartner = false, ...props }: ForgotPasswordFormPr
           Forgot your password?
         </CardTitle>
         <CardDescription className="mx-auto text-[#444444] leading-[1.4] w-full max-w-sm">
-          Enter the email address associated with your account. We&apos;ll send you a code to verify your identity.
+          Enter the email address associated with your account. You&apos;ll confirm it&apos;s you with the 6-digit code from your authenticator app.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -83,7 +83,7 @@ const ForgotPasswordForm = ({isPartner = false, ...props }: ForgotPasswordFormPr
             
             {message && (
               <div className={`text-sm p-3 rounded ${
-                message.includes("sent") 
+                message.includes("authenticator app") 
                   ? "bg-green-100 text-green-800" 
                   : "bg-red-100 text-red-800"
               }`}>
@@ -97,7 +97,7 @@ const ForgotPasswordForm = ({isPartner = false, ...props }: ForgotPasswordFormPr
                 type="submit"
                 disabled={loading}
               >
-                {loading ? "Sending..." : "Request code"}
+                {loading ? "Please wait..." : "Continue"}
               </Button>
               <Button 
                 className="rounded-xl" 

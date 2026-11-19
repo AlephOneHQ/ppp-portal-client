@@ -58,26 +58,13 @@ export function ResetPasswordForm({
             
             if (result.success) {
                 setResetToken(result.reset_token_id ?? "");
-                setMessage("OTP verified! Now set your new password.");
+                setMessage("Code verified! Now set your new password.");
             } else {
-                setMessage(result.message || "Invalid OTP code");
+                setMessage(result.message || "Invalid code");
             }
         } catch (error) {
-            setMessage("Failed to verify OTP");
+            setMessage("Failed to verify code");
             console.error("OTP verification error:", error);
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    const handleResendOTP = async () => {
-        setLoading(true);
-        try {
-            const result = await authAPI.passwordResetRequest(email);
-            setMessage(result.success ? "New code sent to your email!" : "Failed to resend code");
-        } catch (error) {
-            setMessage("Failed to resend code");
-            console.error("Resend OTP error:", error);
         } finally {
             setLoading(false);
         }
@@ -141,20 +128,12 @@ export function ResetPasswordForm({
                     <CardTitle className="leading-[1.2] text-3xl">Password reset</CardTitle>
                     <CardDescription className="mx-auto text-[#444444] leading-[1.4] w-full max-w-sm">
                         {!resetToken 
-                            ? "Enter the 6-digit code sent to your email"
+                            ? "Enter the 6-digit code from your authenticator app."
                             : "Create a new password to complete the reset"
                         }
                         {!resetToken && (
                             <>
-                                {" "}Didn&apos;t receive a code?{" "}
-                                <button
-                                    type="button"
-                                    onClick={handleResendOTP}
-                                    disabled={loading}
-                                    className="text-sm text-[#C13C3D] underline disabled:opacity-50"
-                                >
-                                    Request another
-                                </button>
+                                {" "}No authenticator app set up, or lost your phone? Contact an administrator.
                             </>
                         )}
                     </CardDescription>
@@ -164,7 +143,7 @@ export function ResetPasswordForm({
                         <FieldGroup>
                             {!resetToken ? (
                                 <Field>
-                                    <FieldLabel htmlFor="code">OTP Code</FieldLabel>
+                                    <FieldLabel htmlFor="code">Authenticator code</FieldLabel>
                                     <Input
                                         id="code"
                                         name="code"

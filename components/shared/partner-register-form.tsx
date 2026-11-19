@@ -133,10 +133,13 @@ export function PartnerRegisterForm({ className, ...props }: React.ComponentProp
                 sessionStorage.setItem('otp_user_id', result.user_id ?? "")
                 sessionStorage.setItem('login_email', formData.email)
                 sessionStorage.setItem('is_new_partner', 'true')
+                // Authenticator-app setup data (QR code) for the next screen
+                sessionStorage.setItem('mfa_otpauth_uri', result.otpauth_uri ?? "")
+                sessionStorage.setItem('mfa_secret', result.totp_secret ?? "")
 
-                toast.success("Registration successful! Please verify your email with the OTP sent.")
+                toast.success("Registration successful! Set up your authenticator app to continue.")
 
-                // Redirect to email verification page or success page
+                // Redirect to authenticator setup page
                 router.push("/partner/otp-verification")
             } else {
                 toast.error(result.message)
